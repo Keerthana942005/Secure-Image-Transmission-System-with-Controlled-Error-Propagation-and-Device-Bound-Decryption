@@ -1,0 +1,139 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+\tcbset{
+    colback=gray!5!white,
+    colframe=gray!60!black,
+    fonttitle=\bfseries,
+    arc=2mm
+}
+
+\title{\textbf{Point-by-Point Response to Reviewers}\\\large Paper ID 1323: Secure Image Transmission System with Controlled Error Propagation, Device-Bound Decryption, and Downstream Machine Learning Resilience}
+\author{\textbf{Authors:} Keerthana Nellyeri, Swetha Rajesh, Radhu Krishna R. (Corresponding Author)\\
+School of Computing, Amrita Vishwa Vidyapeetham, Amritapuri, Kollam, India\\
+\texttt{radhukr@am.amrita.edu}}
+\date{ICMLDE 5.0 Revision --- Procedia Computer Science (Elsevier)}
+
+\begin{document}
+\maketitle
+
+\noindent Dear Editors and Reviewers,
+
+We express our sincere gratitude to the reviewers for their constructive, thorough, and highly insightful critiques of Paper ID 1323. Addressing these comments has significantly strengthened the scientific rigor, cryptographic integrity, empirical scope, and architectural clarity of our manuscript.
+
+Below, we provide a detailed, point-by-point response explaining how each comment has been addressed in both the updated codebase and the revised manuscript. All reported numbers originate directly from deterministic benchmark runs on our code and dataset ($S = 42$) synchronized via our macro pipeline.
+
+\section*{Summary of Key Revisions}
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Multi-Image Containment Across All Schemes (Reviewer 1.1, 2.4):} Extended containment evaluation across the complete six-image benchmark suite ($256\times 256$ to $1024\times 1024$) across 5 matched corruption fractions ($f \in [0.46\%, 9.20\%]$, 30 trials/level per image). Results are formalized in new Table~8 and Figure~6, confirming $\text{EPR} \equiv 1.00$ and $+10.78$ to $+26.64$~dB PSNR gains across all test images.
+    \item \textbf{Faithful Re-Implementation of Literature Baselines (Reviewer 1.4):} Implemented Zhou et al. (2014) 1D chaos, Hua et al. (2015) 2D-SLMM, and MSB Selective AES-CTR in our codebase; benchmarked all three on our 6 benchmark images under identical differential metrics (Table~2).
+    \item \textbf{Formal Security Proof Sketches and Threat Model (Reviewer 2.3):} Added formal IND-CPA and INT-CTXT reduction sketches, algebraic proof of 20-byte multi-attribute AAD binding, duplicate nonce guard verification, and explicit non-guarantees (Section~3.5).
+    \item \textbf{Novelty Positioning vs. STREAM and SRTP (Reviewer 1.2):} Added Table~9 systematically contrasting our 2D spatial visual AEAD architecture against 1D STREAM chunking, SRTP (RFC 3711), whole-image GCM, and chaotic ciphers.
+    \item \textbf{Softened EPR Language (Reviewer 2.1):} Explicitly clarified that $\text{EPR} = 1.00$ is an algebraic property of CTR-mode keystream independence under sequence framing, removing any claims that EPR constitutes a formal security proof.
+    \item \textbf{Consistency Bug Fix ($\tau = 0.25$) (Reviewer 2.3):} Corrected $\tau$ in Section~3.6 from $0.50$ to $0.25$, aligning paper prose with `src/config.py`, `src/decryption.py`, and security test vector T08.
+    \item \textbf{Abstract & Overheads (Reviewer 1.5, 3.1):} Condensed abstract to 175 words, eliminating library clutter; updated Conclusion with exact analytical (4.17\%) and total (5.16\%) size overheads and execution latencies (2.91~ms vs. 0.84~ms).
+\end{enumerate}
+
+\vspace{1em}
+\hrule
+\vspace{1em}
+
+\section*{Reviewer 1}
+
+\begin{tcolorbox}[title=Comment 1.1 (Single Test Image in Abstract)]
+``The abstract clearly characterizes the system but needs to mention explicitly that the evaluation is performed on a single test image.''
+\end{tcolorbox}
+\textbf{Author Response:} We have broadened our experimental evaluation across a diverse benchmark suite of \textbf{six benchmark images} ($256\times 256$, $512\times 512$, $1024\times 1024$, and $1199\times 460$) spanning photographic, high-frequency texture, smooth chromatic gradients, clinical MRI scans, and aerial terrain. The Abstract (lines 53--55), Section~4.1, Table~1, and new Table~8 report results across the full six-image suite.
+
+\begin{tcolorbox}[title=Comment 1.2 (Novelty Beyond Per-Block AES-GCM)]
+``Block-level AES-GCM, controlled error propagation, and device-bound key derivation can be considered as an engineering contribution. What makes the contribution novel apart from the application of AES-GCM per block?''
+\end{tcolorbox}
+\textbf{Author Response:} Naively applying AES-GCM per block fails: packet loss desynchronizes implicit counters, and blocks can be transposed or spliced across sessions. Our scientific contribution is the systemic cross-layer co-design:
+(1) 800-byte record framing with 20-byte multi-attribute AAD binding $(i \parallel H \parallel W \parallel N \parallel \text{epoch})$;
+(2) Defense-in-depth key derivation (X25519 + 600,000 PBKDF2 iterations + HKDF bound to device ID);
+(3) Tag-directed spatial error concealment;
+(4) Machine learning resilience preservation under transmission errors.
+We added Table~9 contrasting our architecture against STREAM, SRTP, and monolithic ciphers.
+
+\begin{tcolorbox}[title=Comment 1.3 (Nonce and Key Handling Leakage Analysis)]
+``The analysis must consider potential leakages related to nonce and key handling.''
+\end{tcolorbox}
+\textbf{Author Response:} Added Section~3.4 and Section~3.5 analyzing: (1) 96-bit random nonce collision probability ($P_{\text{coll}} \le 1.06 \times 10^{-22}$ per session; union-bound $1.1 \times 10^{-13}$ across $10^9$ sessions); (2) Counter overflow immunity (48 invocations per block $\ll 2^{32}-2$); (3) Constant-time HMAC comparison (\texttt{hmac.compare\_digest}); (4) Empirical test verifying zero collisions across 409,600 generated nonces and immediate tag failure under duplicate nonce injection (`tests/test_nonce_guard.py`).
+
+\begin{tcolorbox}[title=Comment 1.4 (Comparison with Chaotic and Selective Schemes)]
+``It is necessary to compare the proposed scheme to other selective or chaotic image encryption algorithms using standard metrics like NPCR, UACI, and entropy.''
+\end{tcolorbox}
+\textbf{Author Response:} We faithfully re-implemented Zhou et al. (2014) 1D chaos, Hua et al. (2015) 2D-SLMM, and MSB Selective AES-CTR, benchmarking them on all six images with our metric code. Table~2 reports exact empirical measurements. While chaotic schemes attain high entropy ($7.9997$), they offer no authentication tags and desynchronize catastrophically under loss ($\text{EPR} \gg 1$).
+
+\begin{tcolorbox}[title=Comment 1.5 (Overhead Specification in Conclusion)]
+``The conclusion must specify the overhead in file size and processing time caused by per-block tags.''
+\end{tcolorbox}
+\textbf{Author Response:} Section~6 explicitly specifies: 32 bytes per 768-byte block (4.17\% analytical framing overhead, 5.16\% total with padding); encryption latency is 2.91~ms (569.2~MB/s pure crypto, 191.9~MB/s end-to-end) versus 0.84~ms for monolithic GCM.
+
+\vspace{1em}
+\hrule
+\vspace{1em}
+
+\section*{Reviewer 2}
+
+\begin{tcolorbox}[title=Comment 2.1 (EPR = 1.0 Does Not ``Prove'' Containment)]
+``It is inappropriate to say that EPR equals 1.0 and therefore `proves' strong containment.''
+\end{tcolorbox}
+\textbf{Author Response:} We completely concede this point. In Section~1, Section~3.5, and Section~4.2, we clarified that $\text{EPR} = 1.00$ is an \textbf{algebraic property of CTR-mode keystream independence under per-block AEAD}, not a formal cryptographic hardness proof.
+
+\begin{tcolorbox}[title=Comment 2.2 (MAC Spoofing Vulnerability)]
+``MAC-based device binding is vulnerable to spoofing; this drawback should be discussed.''
+\end{tcolorbox}
+\textbf{Author Response:} We explicitly discuss this in Section~3.1, Section~3.3, and Limitation (1). In our architecture, MAC is not a secret key; it is a contextual factor in HKDF. The secret entropy comes from X25519 and the 600,000-iteration PBKDF2 passphrase. Spoofing the MAC address yields zero advantage without the secret passphrase and private key. Hardware-rooted PUFs/TPMs are outlined as future work.
+
+\begin{tcolorbox}[title=Comment 2.3 (Formal Security Analysis and Threat Model)]
+``A formal security analysis or a threat model will enhance the contribution.''
+\end{tcolorbox}
+\textbf{Author Response:} Added Section~3.1 (Dolev-Yao threat model) and Section~3.5 (formal IND-CPA and INT-CTXT reduction sketches, multi-attribute AAD algebraic binding proof, duplicate nonce test vector findings, and four explicit non-guarantees).
+
+\begin{tcolorbox}[title=Comment 2.4 (Multi-Image Evaluation across Sizes and Content)]
+``Evaluation of the method on multiple images of different sizes and content is needed.''
+\end{tcolorbox}
+\textbf{Author Response:} We extended our evaluation to all six benchmark images across 5 matched fractions ($f \in [0.46\%, 9.20\%]$). New Table~8 and Figure~6 present full multi-image containment results across Monolithic GCM, Unframed CBC, Framed CBC, Proposed Raw, and Proposed Concealed.
+
+\begin{tcolorbox}[title=Comment 2.5 (Comparison with AES-CBC in PSNR Table)]
+``The comparison with AES-CBC is helpful and should be represented in a table containing PSNR values.''
+\end{tcolorbox}
+\textbf{Author Response:} Table~3 (Submarine benchmark) and Table~8 (Multi-Image benchmark) tabulate exact PSNR, SSIM, and EPR across 30 independent trials per level for Monolithic GCM, Unframed CBC, Framed CBC, Proposed Raw, and Proposed Concealed.
+
+\begin{tcolorbox}[title=Comment 2.6 (Error Concealment of Failed Blocks)]
+``Error concealment of failed blocks is a natural continuation of future work.''
+\end{tcolorbox}
+\textbf{Author Response:} In Section~3.6 and Section~4.2, we evaluate our immediate boundary-directed spatial interpolation (+10.78 to +26.64~dB gain across images, within 0.21--0.62~dB of OpenCV Telea/Navier-Stokes). In Section~5 (Limitations) and Section~6, deep generative inpainting (Context Encoders, Partial Convolutions) is detailed as future work.
+
+\vspace{1em}
+\hrule
+\vspace{1em}
+
+\section*{Reviewer 3}
+
+\begin{tcolorbox}[title=Comment 3.1 (Shorten Abstract, Eliminate Implementation Details)]
+``The abstract could be shortened by eliminating the implementation-level details.''
+\end{tcolorbox}
+\textbf{Author Response:} Condensed abstract to 175 words, eliminating library names and implementation minutiae while highlighting the core problem, architecture, metrics ($\text{EPR} = 1.00$, gains), and ML resilience.
+
+\begin{tcolorbox}[title=Comment 3.2 (Explain Relevance to Machine Learning Theme)]
+``The relevance of the work to the conference theme of machine learning should be explained in the manuscript.''
+\end{tcolorbox}
+\textbf{Author Response:} Section~1, Section~4.7, and Table~7 explicitly evaluate downstream ML resilience using MobileNetV2 on 500 ImageNet validation images: under 9.18\% block corruption, our scheme preserves 83.8\% top-1 agreement with clean-image predictions (+\mlGainKEighteenRaw\ percentage points over zero-masking), whereas monolithic GCM yields 0\% availability.
+
+\end{document}
+

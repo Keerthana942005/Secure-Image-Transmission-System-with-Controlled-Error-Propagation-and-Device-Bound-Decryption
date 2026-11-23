@@ -1,0 +1,216 @@
+<USER_REQUEST>
+ROLE
+You are revising a research project and its paper. Project: a Secure Image Transmission System (block-wise AES-256-GCM on 16x16 RGB blocks, explicit 4-byte index header + 12-byte IV + 768-byte ciphertext + 16-byte tag = 800-byte records, 20-byte AAD = index||H||W||N||epoch, PBKDF2-HMAC-SHA256 + HKDF-SHA256 key derivation bound to a device ID and epoch, Device Revocation List, Error Propagation Radius (EPR), tag-directed spatial concealment, MobileNetV2 downstream test, Streamlit dashboard). Paper: Procedia Computer Science (Elsevier), International Conference on Machine Learning and Data Engineering. Authors: Keerthana Nellyeri, Swetha Rajesh, Radhu Krishna R.
+
+This revision responds to an internal review of the revised draft. Your job is to fix every issue listed below, in the code AND the paper.
+
+GROUND RULES
+1. NEVER invent, estimate, or round numbers into shape. Every number in the paper must come from a script run on the actual code and must reach the LaTeX through generated tables/macros (see A1).
+2. NEVER fabricate references. Use only the verified entries in PART B-REFERENCES. Anything marked [VERIFY] must be checked against the publisher/DOI page before use; if you cannot verify it, leave it out and tell me.
+3. Make targeted edits. Keep existing text that is already correct. Do not rewrite sections that are not listed.
+4. Be honest: if a re-run gives a weaker result than the paper currently states, change the claim to match the data.
+5. Work in this order: STEP 0 (audit) -> PART A (project) -> PART B (paper) -> PART C (checks) -> PART D (reviewer response).
+6. Deliverables: updated code + tests; updated LaTeX; results/ (raw JSON/CSV); CHANGELOG.md (every change tagged with its ID); AUDIT.md; response_to_reviewers.md; a list of everything you could not do and why.
+
+=====================================================================
+STEP 0 - AUDIT OF KNOWN PROBLEMS (record in AUDIT.md before changing anything)
+=====================================================================
+Confirm or refute each item below by running the current code/LaTeX. Record result, root cause, fix ID.
+ K1. Table 7 renders with only the corruption-level column; Table 6 row T08 is cut off ("Truncating trailing 50" then T09 runs on). Suspected cause: unescaped % in LaTeX table cells (% starts a comment and eats the rest of the line).
+ K2. Table 3 caption says "Submarine Benchmark, 768x512, 1,536 Total Blocks", but Submarine is 1199x460 (padded 1200x464, 2,175 blocks) and the percentages in the table are K/2175.
+ K3. Table 4 caption says "1024 x 512 Test Image" but the monolithic payload (1,654,648 B = 1,654,620 + 28) and block counts (2,175 / 8,700 / 570 / 152) are those of Submarine.
+ K4. Fig. 2 caption (K=25): raw 27.08 dB, concealed 38.35 dB, CBC 9.28 dB; Table 3 (K=25): raw 29.90, concealed 41.44, CBC 11.54. The Fig. 2 CBC value equals Table 3's K=200 value. Find out which trial/seed Fig. 2 used.
+ K5. Table 3 CBC PSNR at K=25 is 11.54, identical to the K=25 concealment gain 11.54. Check it is not a copy/paste error.
+ K6. Fig. 4 annotation says "6.46 ms" but Table 4 says 6.00 ms for 16x16.
+ K7. Table 5 CPU-utilization percentages (73.7% for 720p60, 76.4% for 1080p30) do not equal required throughput / measured throughput (165.9/263.2 = 63.0%, 186.6/263.2 = 70.9%), and 1080p30 needs 12.5% more throughput than 720p60 but shows only +3.7% utilization. Find the formula used.
+ K8. Throughput units: 263.2 "MB/s" equals 1,654,620 B / 6.00 ms in MiB/s (about 263.0), i.e. binary MiB/s, while the video rates (165.9, 186.6, 373.2, 1.49 GB/s) are decimal MB/s. Mixed units.
+ K9. ML experiment: "100 images, 10 trials per level, 2,000 inferences" does not add up (100 x 10 x 5 levels = 5,000 per scheme). Determine the real count and the real corruption sets.
+ K10. Table 3 shows EPR = 1.00 at K=0 for all schemes (0/0 is undefined).
+ K11. Table 2 text claims "plain values exceeding +0.95" for adjacent-pixel correlation but no plain correlation is tabulated; text says |r| < 0.0310 but the table has a value of exactly -0.0310.
+ K12. Table 1 (comparison with literature) literature rows (7.9993/99.62/33.45; 7.9994/99.61/33.46; 7.9991/99.60/33.42) look like near-ideal values; verify each against the cited paper, including the test image used. "Cascading Diffusion" cells are unsupported.
+ K13. Reference errors (details in PART B-REFERENCES): [11] does not match a real paper; [12] wrong volume/year/pages; [4] author name garbled and used for the wrong claim; [15] (LTE transmission) cited as a chaotic-encryption paper; [3],[4] cited for generic DNN inference instead of where they are used.
+ K14. Page-1 footer: "Corresponding author" footnote text overlaps the "1877-0509 ..." line (template/footnote macro problem; the previous draft did not have it).
+ K15. Conceptual: (a) the paper never says how K_session, the two salts, and (H, W, N, epoch) reach the receiver although the threat model says the attacker sees all headers/metadata; (b) "strict forward secrecy" is claimed in Contribution 2 but nothing provides it; (c) Contribution 1 says "without expanding transmission bandwidth" but the header adds 32 B per 768 B block; (d) CBC "packet loss corrupts every subsequent block" is not true for loss of 16-byte-aligned records (CBC resyncs after one block); the large CBC damage comes from the pixel stream shifting position (note the colour-shifted streaks in Fig. 2c), i.e. lost framing; (e) PBKDF2 uses 100,000 iterations (low by current guidance for HMAC-SHA256).
+
+=====================================================================
+PART A - PROJECT / CODE FIXES
+=====================================================================
+
+A1. LaTeX-safe, single-source results pipeline (fixes K1, K2, K3, K4, K6, K10)
+- experiments/run_all.py runs every experiment, fixed global seed, 30+ trials for random experiments, writes results/*.json|csv and results/environment.json (CPU model, cores, RAM, OS, Python version, "cryptography" package version and its bundled OpenSSL version, AES-NI status, git commit).
+- scripts/make_tables.py generates tables/*.tex and results_macros.tex from results/ only. Rules:
+   * Escape every LaTeX special character in cell text and numbers, especially % -> \% , _ -> \_ , & -> \& , # -> \# .
+   * Assert the expected number of rows and columns for each table before writing; fail loudly otherwise (this prevents Table 7 / Table 6 truncation).
+   * Table captions are generated from the same results metadata (image name, dimensions, padded dimensions, block count, number of trials), so a caption can never disagree with the data.
+- scripts/lint_latex.py: (i) fail if any line inside a tabular environment contains an unescaped % ; (ii) fail if a table has fewer cells in any row than the header; (iii) fail on hard-coded numbers in abstract/conclusion that are not macros.
+- Figures are generated from results/ only (vector PDF, fonts >= 8 pt, same colours per scheme in every figure). Fig. 2 must use the SAME corrupted block set and trial as one row of Table 3, and its caption must say "single trial, seed S, K=25" and quote that trial's numbers. Fig. 4's annotation text must be generated from Table 4's values.
+- EPR at K=0 is reported as "-" (undefined), never 1.00.
+
+A2. Error-containment experiments (fixes K5, K15d)
+- Re-run Table 3 on Submarine AND on at least two more images (e.g. Baboon 512x512, Satellite 1024x1024) with 30+ trials per K in {10,25,50,100,200}; report mean +/- std. Keep Submarine as the main table; put the other two in a second table or appendix.
+- Schemes: (1) monolithic AES-GCM, (2) AES-CBC single chain, no framing (the current "stream loss" model), (3) AES-CBC with explicit per-record index/sequence number (fair baseline), (4) AES-CBC per block + HMAC-SHA256 (Encrypt-then-MAC), (5) proposed block AES-GCM. Three corruption models: in-place bit flips; record deletion with no framing information; record deletion with explicit index.
+- Metrics per scheme: blocks wrong vs original, blocks detected as bad, detection precision/recall, EPR (defined as blocks_wrong / blocks_corrupted, "-" at K=0), affected area, PSNR and SSIM (raw/zero-masked and concealed), availability.
+- Investigate and document K5 (the 11.54 coincidence) and K4 (which trial Fig. 2 used).
+- Expected honest finding to report if the data support it: CBC in-place bit flips affect about 1-2 AES blocks (so similar containment) but are undetected; unframed CBC loses alignment under record loss; CBC with explicit framing loses only the deleted record plus one AES block, but still has no integrity detection. The paper must be framed around "authenticated detection + localization + containment + concealment", not "CBC cascades".
+
+A3. Concealment evaluation
+- Run concealment on all six images (K in {10,25,50,100,200}, 30 trials, same corrupted sets for all methods). Baselines: zero-mask, mean fill, proposed interpolation, OpenCV inpaint (Telea, Navier-Stokes). Report PSNR and SSIM, mean +/- std. If the six-image range differs from the Submarine-only range (+10.78 to +11.54 dB), the abstract uses the six-image range.
+- Output a boolean concealed-block mask with every concealed image and add a configurable threshold tau (refuse to output if failed fraction > tau). Log both "failed" (tag invalid) and "missing" (gap in index) blocks.
+- Unit tests for Eq. (10) weights on hand-computed 2x2-block examples, all four neighbours, and the 8-neighbour fallback.
+
+A4. ML experiment (fixes K9)
+- Fix the image list: at least 500 ImageNet-1K validation images (store the file list in the repo), resized/cropped to 224x224 (196 blocks). Report counts explicitly: images x trials x levels x schemes = inferences.
+- Corruption levels 0.5, 1.0, 2.3, 4.6, 9.2 percent of blocks (state the integer number of blocks each corresponds to for 196 blocks), 10+ random trials per level, same corrupted block sets for every scheme.
+- Metric: top-1 agreement with the CLEAN-IMAGE prediction (not ground-truth labels); also report top-1 accuracy against ImageNet labels as a second metric. Report mean and 95% CI (bootstrap over images). Report availability (a discarded image counts as no prediction).
+- Include the CBC-with-framing baseline from A2 so the ML comparison is not against a strawman.
+- Output Table 7 and Fig. 5 only through make_tables.py (A1), with assertions.
+
+A5. Key management and security (fixes K15a, K15b, K15e)
+- Key transport: implement and document ONE of: (a) [default] X25519 ephemeral-static agreement against the receiver's enrolled static public key, whose result is mixed into the IKM (the sender transmits only its ephemeral public key); or (b) if (a) cannot be finished, implement an explicit "K_session delivered out of band over an authenticated channel" mode and say so in the paper's threat model. In either case a session header carrying (salt_pbkdf2, salt_hkdf, H, W, N, epoch, [ephemeral public key]) must be defined, authenticated (e.g. bound into the AAD or HMAC-signed), and shown in Fig. 1.
+- Remove every claim of forward secrecy from code comments, README, dashboard text and paper. (Epoch counters and a static passphrase do not provide it.)
+- PBKDF2: make the iteration count a configuration value, default 600,000 for HMAC-SHA256 [VERIFY against current OWASP Password Storage Cheat Sheet before citing]; benchmark derivation time on the test machine and report it; keep a documented lower setting for constrained devices if needed. Optionally support Argon2id behind a flag.
+- Enforce a minimum passphrase length/entropy estimate in the API and dashboard.
+- Tests: RFC 5869 HKDF vectors; wrong passphrase / wrong device ID / revoked ID / replayed epoch / tampered header index / tampered H,W,N / truncated stream / duplicated record / cross-session record / swapped records / dropped record (with index). Report trials and outcomes in Table 6 (generated, with every row present).
+
+A6. Hardware and performance (fixes K7, K8, K6)
+- One benchmark script: warm-up, 20+ runs, report median and std for encryption, decryption, and end-to-end (including block split/merge). Define throughput = raw image bytes / time and report it in MB/s (decimal, 10^6 bytes) everywhere; if you prefer MiB/s, use MiB/s everywhere including the video-rate comparisons. Recompute all throughput numbers.
+- Utilization = required video rate / measured throughput, stated as a formula in the paper; recompute (do not reuse the old percentages).
+- Record exact CPU model (not just "Intel i5"), cores/threads, clock, RAM, OS, Python and library versions. The "OpenSSL (50.0.2)" entry must be replaced by "cryptography <version> (OpenSSL <version>)".
+- Second hardware point (addresses Reviewer 3): run the same script on at least one more device (e.g. a Raspberry Pi 4, an ARM laptop/phone via Termux, or a second PC with different CPU; if AES-NI can be disabled, additionally report a software-AES run). If impossible, say so in the limitations and rename "Multi-Hardware" in the paper to "Hardware Benchmarking" (single host).
+- Add a PBKDF2 time row (A5) and the session-setup cost.
+
+A7. Dashboard and repo
+- Dashboard: failed/missing block map, original vs zero-masked vs concealed side by side, concealed-block mask, tau slider, passphrase strength check, result JSON download.
+- README: exact commands to regenerate every table/figure; image sources and licences (Cameraman, Baboon, Peppers, MRI, Satellite, Submarine); ImageNet subset list file; license; a code/data availability statement text for the paper (repo URL/archive DOI placeholders).
+
+=====================================================================
+PART B - PAPER FIXES (LaTeX)
+=====================================================================
+All numbers via macros/generated tables. Remove every sentence that reads like a reply to a reviewer.
+
+B1. ABSTRACT - REPLACE with the text below (<= ~170 words, no implementation details). Fill the bracketed values from macros; do not change the wording unless a result changes.
+
+"Transmitting images over untrusted, noisy channels to machine learning (ML) pipelines forces a trade-off between security and fault resilience: monolithic authenticated encryption discards a whole image on a single bit error, whereas unauthenticated chained modes corrupt data silently. We present a secure image transmission system that encrypts independent 16 x 16 blocks with AES-256-GCM, authenticates each block's position and session context, and derives decryption keys bound to an authorized device and a shared passphrase. Corrupted or missing blocks are identified exactly and concealed by spatial interpolation, without retransmission. On six benchmark images (256 x 256 to 1024 x 1024), the error propagation radius is 1.00 and ciphertext entropy is [7.9991-7.9999] bits. Concealment improves PSNR by [10.78-11.54] dB [on the Submarine image / across the six images]. In a MobileNetV2 test under 9.2% block corruption, the scheme keeps [84.9]% top-1 agreement with clean-image predictions, whereas monolithic GCM provides no usable output. Framing overhead is [5.16]% in size, with [6.00] ms encryption latency on a desktop-class CPU."
+
+Keywords: AES-256-GCM; Authenticated encryption; Device-bound key derivation; Error propagation radius; Spatial error concealment; Machine learning resilience; Threat model.
+Remove "MobileNetV2" from the keywords (keep it in the body).
+
+B2. INTRODUCTION
+ - Paragraph on CBC: replace the sentence "Traditional chained block ciphers ... corrupting all subsequent plaintext blocks" with:
+   "Chained block ciphers such as AES-CBC [7, 8] recover from an isolated in-place bit flip after two blocks, but they carry no integrity check, so corruption is silent and cannot be localized; and because a CBC stream carries no position information, a lost or shifted record misaligns the remaining pixel data unless explicit framing is added."
+ - Contribution 1: replace the last clause "without expanding transmission bandwidth" with: "The AAD is reconstructed by the receiver from authenticated session metadata and adds no per-record bytes; the explicit index header, IV and tag add 32 bytes per 768-byte block (4.17%)."
+ - Contribution 2: delete "enforce strict forward secrecy and replay immunity"; write: "A Device Revocation List (DRL) and monotonic epoch tracking provide device revocation and replay rejection. We do not claim forward secrecy." Add one sentence naming the key-transport mechanism implemented in A5.
+ - Contribution 3: replace "avoiding the cascading failure of CBC (EPR > 200)" with "avoiding the loss of alignment suffered by unframed CBC streams (EPR > 200 in our unframed-stream test) and the total discard of monolithic AEAD", and state that EPR = 1.00 holds for in-place corruption and for record loss with explicit indexing.
+ - Contribution 5: "+40.8%" -> "+40.8 percentage points", "+62.5%" -> "+62.5 percentage points" (use macros), and say agreement is with clean-image predictions.
+ - Contribution 6: if no second device was measured, rename to "Multi-Image Benchmarking and Hardware Profiling" and remove the plural-hardware wording.
+ - Cite [3] (MobileNetV2) and [4] (SSIM) only where they are used (Sec. 4.3 / 4.7), not in the first paragraph. Replace them in the first paragraph with appropriate edge-ML references or remove.
+
+B3. RELATED WORK
+ - Sec 2.1 CBC sentence: replace "packet loss or byte deletion causes complete loss of cipher synchronization, corrupting every subsequent block in the image stream [8]" with:
+   "a single-bit flip in ciphertext self-recovers after two blocks, whereas a deleted record leaves the receiver unable to detect the loss or to know which image region is missing; without explicit sequence information the remaining pixel data shifts position and the reconstruction is misaligned. CBC therefore provides neither detection nor localization [7, 8, NIST SP 800-38A]."
+   Cite Burda [8] only if you verified it supports the self-recovery claim; otherwise cite NIST SP 800-38A.
+ - Sec 2.1 chaos paragraph: cite [14] and the verified chaos papers; remove [15] from this sentence (move [15] to a sentence about secure image transmission over noisy wireless channels). Add Preishuber et al. (security analysis of chaos-based image encryption) [VERIFY volume/pages].
+ - Add a short paragraph "Block-wise and streaming AEAD": STREAM / online AE (Hoang et al.), SRTP per-packet authentication (RFC 3711), to state the novelty honestly: the construction is a segmented AEAD; the contribution is its adaptation to image data (spatial index/geometry binding, device/passphrase-bound key schedule, EPR + detection metrics, tag-directed concealment, ML evaluation).
+ - Add one sentence each on image inpainting and CNN robustness to corruption/occlusion (Pathak et al., Liu et al., Hendrycks and Dietterich) to justify concealment for ML.
+
+B4. SECTION 3
+ - 3.1 Threat model: add assumptions (explicit list): K_session/key material delivery (A5 mechanism or out-of-band assumption), authenticated session header, receiver host uncompromised, passphrase entropy minimum, MAC address attacker-readable, side channels and memory-resident attacks out of scope, total-corruption DoS unavoidable. Replace "IND-CTXT ... probability of forgery <= 2^-128" and "tag failure with probability 1 - 2^-128" with: "forgery succeeds with probability about 2^-128 per attempt, up to a small factor depending on message length (NIST SP 800-38D)".
+ - 3.2: replace the paragraph headed "Problem with Implicit Indexing: In preliminary designs ..." with a design-rationale paragraph: "If the block index were bound only in the AAD and not transmitted, the loss of one record would shift every later record by one position and all subsequent tags would fail. We therefore transmit the index in the record header and authenticate it through the AAD." Do not refer to earlier drafts.
+ - 3.2: add the session-header definition and where H, W, N, epoch, salts come from and how they are authenticated.
+ - 3.3: MAC paragraph stays; replace "cryptographic security is governed by a high-entropy secret passphrase" with "... by the secret key material (K_session and the passphrase); the passphrase must meet a minimum entropy requirement enforced by the implementation". Update PBKDF2 iterations to the value implemented in A5 and explain the choice. Replace "strict forward secrecy" anywhere with "replay rejection and revocation". "All key buffers in RAM are purged" -> "best-effort zeroization (Python does not guarantee memory erasure)".
+ - 3.4: counter-overflow sentence "rollover is impossible" -> "rollover cannot occur". Add the NIST SP 800-38D limit on random-IV invocations per key and show the system stays far below it. State collision bound for N = 4096 (about 1.06e-22) and keep the deterministic-nonce alternative as optional.
+ - 3.5: delete the sentence "In early literature, an empirical metric of EPR = 1.0 was described as proving error containment." Replace the clarification paragraph with:
+   "EPR = 1.00 is a consequence of per-block keystream and tag independence, not a security proof. It holds for in-place corruption and for record loss when records carry an explicit index; it does not hold if framing is lost. EPR measures containment only, not detection, so we also report the detection rate (fraction of corrupted blocks flagged by tag failure or index gaps)."
+   Define EPR for tag-less schemes (blocks whose decrypted content differs from the original).
+ - 3.6: define E_k, N, the weights for all four neighbours and the 8-neighbour fallback fully; add the concealed-block mask, the threshold tau, and the sentence: "Concealed pixels are not authenticated; a concealed image is therefore flagged and its mask is passed to the downstream application."
+
+B5. SECTION 4
+ - 4.1: add exact hardware/software/seed/trial details from environment.json; image sources and licences; note that Cameraman and MRI are converted from grayscale to RGB and that Submarine (1199x460) is padded to 1200x464.
+ - 4.2: fix K11: add plain correlation columns (rH, rV, rD for plain and cipher) to Table 2 or a companion table; "|r| < 0.0310" -> "|r| <= 0.0310" (or the new max); keep the fresh-nonce vs fixed-nonce NPCR paragraph and add one sentence that these two metrics are reported for comparability with chaos-based literature and are not part of the AEAD security argument.
+ - Table 1: (i) the "Proposed Scheme" row = mean over the six images of Table 2 (state "mean of six images"); (ii) "Standard AES-CBC" row = measured with random IV, same protocol, same images, state it; (iii) literature rows = values AS REPORTED in the original papers, with the test image named in a footnote and the note "not directly comparable"; use "-" where a metric is not reported; (iv) replace "Cascading Diffusion" cells with "No integrity tag; channel-error behaviour not evaluated" (or measure it on an implemented baseline if time permits and then state the measured value); (v) relabel the Chai row to match the paper actually cited (see references; year becomes 2019 if the Multimedia Tools and Applications paper is used).
+ - 4.3 / Table 3 / Figs 2-3: caption "Submarine (1199 x 460, 2,175 blocks), 30 trials per level"; add the CBC-with-framing column and detection-rate column; EPR at K=0 shown as "-"; remove the duplicate unit ("dB dB"); rewrite the CBC bullet to: "Unframed CBC: when records are lost, the pixel stream shifts and [92.17]% of the image is misaligned (EPR = [200.48], PSNR = [13.95] dB); in-place bit flips self-recover after two blocks but are not detected; with explicit framing, CBC loses only the deleted record plus one cipher block, but still cannot detect in-place tampering." (use the new measured numbers).
+ - 4.4 / Table 4 / Fig. 4: caption "Submarine (1199 x 460), 30 runs"; report enc and dec overheads separately; units per A6; annotation text generated from the table.
+ - 4.5 / Table 5: new numbers (A6), correct units, utilization formula in the text, exact CPU model, "cryptography <ver> (OpenSSL <ver>)", second device if measured.
+ - 4.6 / Table 6: regenerate with all 12+ rows present and the trial counts.
+ - 4.7 / Table 7 / Fig. 5: use the A4 setup; "against clean-image predictions"; correct counts; "+40.8 percentage points"; 95% CI; include CBC-with-framing.
+ - Add one sentence in 4.7 stating limits: one model, one dataset subset, interpolation baseline only.
+
+B6. SECTION 5 AND 6
+ - Section 5: keep the contribution paragraph (no reviewer language). Replace the two-sentence Limitations with this paragraph (fill in measured details):
+   "Limitations: (i) software MAC fingerprinting can be spoofed, so device binding rests mainly on the secret key material; hardware-rooted attestation (TPM 2.0 PCRs, ARM TrustZone, PUFs) is future work. (ii) Concealed pixels are not authenticated, and an attacker who can corrupt chosen blocks can force concealment of those regions; we therefore expose a concealed-block mask and a rejection threshold. (iii) We do not claim forward secrecy, and side channels and host compromise are out of scope. (iv) The block size and padding reveal approximate image dimensions. (v) Error-containment tables are reported mainly on [Submarine plus two further images], the ML test uses one model (MobileNetV2) and [N] ImageNet images, and hardware results come from [one host / two hosts]. (vi) Spatial interpolation is weaker on high-frequency textures; learned inpainting is future work."
+ - Conclusion: restate overhead as 4.17% header/IV/tag (32 B per 768 B) and 5.16% including padding, relative to the raw image size; give enc and dec latency; no new numbers; mention limitations in one sentence.
+ - Add a "Code and data availability" paragraph with the repository/archive placeholder and the image-source note.
+
+B7. REFERENCES - target list. Renumber automatically by first-citation order (BibTeX/elsarticle numeric style). Every entry must be cited at least once; every citation must support its sentence. Entries marked [VERIFY] must be checked on the publisher/DOI page before use.
+
+ KEEP (already correct):
+  - W. Stallings, Cryptography and Network Security: Principles and Practice, 7th ed., Pearson, 2017.
+  - M. Dworkin, "Recommendation for Block Cipher Modes of Operation: Galois/Counter Mode (GCM) and GMAC," NIST SP 800-38D, 2007.
+  - J. Daemen and V. Rijmen, The Design of Rijndael, Springer, 2002.
+  - H. Krawczyk and P. Eronen, "HMAC-based Extract-and-Expand Key Derivation Function (HKDF)," IETF RFC 5869, 2010.
+  - H. T. Assafli and I. A. Hashim, "Security Enhancement of AES-CBC and Its Performance Evaluation Using the Avalanche Effect," IICETA, 2020, pp. 7-11.
+  - K. Burda, "Error Propagation in Various Cipher Block Modes," IJCSNS, vol. 6, no. 11, pp. 146-150, 2006. (cite only for claims it supports)
+  - K. Nimmy, S. Sankaran, K. Achuthan, P. Calyam, "Lightweight and Privacy-Preserving Remote User Authentication for Smart Homes," IEEE Access, vol. 10, pp. 176-190, 2022.
+  - K. Nimmy, S. Sankaran, K. Achuthan, "A Novel Lightweight PUF based Authentication Protocol for IoT without Explicit CRPs in Verifier Database," J. Ambient Intell. Humaniz. Comput., vol. 14, pp. 6227-6242, 2023.
+  - K. Nimmy, P. Krishnan, S. Sankaran, K. Achuthan, A. S. Alluhaidan, "A Lightweight Multi-Chaos-Based Image Encryption Scheme for IoT Networks," IEEE Access, vol. 12, pp. 41519-41535, 2024.
+  - F. A. K. Al-Fahaidy et al., "Secure Image Transmission through LTE Wireless Communications Systems," EURASIP J. Image Video Process., 2024, art. 3. (cite for secure transmission over wireless channels, NOT as a chaotic scheme)
+  - Center for Cybersecurity Systems and Networks, Amrita Vishwa Vidyapeetham, "On the Convergence of Internet of Things and Decentralized Finance: Security Challenges and Future Directions," Sensors, vol. 26, no. 6, p. 1740, 2026. (keep only if the sentence it supports is about IoT/edge security context; otherwise remove)
+  - M. Sandler et al., "MobileNetV2: Inverted Residuals and Linear Bottlenecks," CVPR 2018, pp. 4510-4520. (cite in Sec 4.7)
+  - Z. Wang, A. C. Bovik, H. R. Sheikh, E. P. Simoncelli, "Image Quality Assessment: From Error Visibility to Structural Similarity," IEEE Trans. Image Process., vol. 13, no. 4, pp. 600-612, 2004. (FIX the author name "H. Reka"; cite where SSIM is introduced)
+  - Y. Zhou, L. Bao, C. L. P. Chen, "A New 1D Chaotic System for Image Encryption," Signal Processing, vol. 97, pp. 172-182, 2014. (verified)
+
+ CORRECT:
+  - Replace [12] with: Z. Hua, Y. Zhou, C.-M. Pun, C. L. P. Chen, "2D Sine Logistic Modulation Map for Image Encryption," Information Sciences, vol. 297, pp. 80-94, 2015. (verified; Table 1 row becomes "Hua et al. (2015)")
+  - Replace [11] with: X. Chai, J. Zhang, Z. Gan, Y. Zhang, "Medical Image Encryption Algorithm Based on Latin Square and Memristive Chaotic System," Multimedia Tools and Applications, vol. 78, no. 24, pp. 35419-35453, 2019. (verified; Table 1 row becomes "Chai et al. (2019)", primitive "Latin square + memristive chaos"). The previously cited "Chai, Chen, Broyde ... Information Sciences vol. 405" does not exist as cited; do not use it. If you prefer the 2017 Chai-Chen-Lucie paper, the verified entry is: X. Chai, Y. Chen, L. Broyde, "A Novel Chaos-Based Image Encryption Algorithm Using DNA Sequence Operations," Optics and Lasers in Engineering, vol. 88, pp. 197-213, 2017. Use whichever matches the numbers you copy into Table 1.
+
+ ADD (to support new text; verify details before use):
+  - M. Dworkin, "Recommendation for Block Cipher Modes of Operation: Methods and Techniques," NIST SP 800-38A, 2001.
+  - NIST FIPS 197, "Advanced Encryption Standard (AES)," 2001.
+  - B. Moriarty, K. Kaliski, A. Rusch, "PKCS #5: Password-Based Cryptography Specification Version 2.1," IETF RFC 8018, 2017 (for PBKDF2).
+  - T. Hoang, R. Reyhanitabar, P. Rogaway, D. Vizar, "Online Authenticated-Encryption and its Nonce-Reuse Misuse-Resistance," CRYPTO 2015. (for STREAM/online AE; verify pages)
+  - M. Baugher et al., "The Secure Real-time Transport Protocol (SRTP)," IETF RFC 3711, 2004.
+  - O. Russakovsky et al., "ImageNet Large Scale Visual Recognition Challenge," Int. J. Comput. Vis., vol. 115, no. 3, pp. 211-252, 2015.
+  - D. Hendrycks and T. Dietterich, "Benchmarking Neural Network Robustness to Common Corruptions and Perturbations," ICLR 2019.
+  - D. Pathak et al., "Context Encoders: Feature Learning by Inpainting," CVPR 2016.
+  - G. Liu et al., "Image Inpainting for Irregular Holes Using Partial Convolutions," ECCV 2018.
+  - S. V. Radhakrishnan, A. S. Uluagac, R. Beyah, "GTID: A Technique for Physical Device and Device Type Fingerprinting," IEEE Trans. Dependable Secure Comput., vol. 12, no. 5, pp. 519-532, 2015. (cite where device fingerprinting/MAC spoofing is discussed)
+  - M. Preishuber et al., "Depreciating Motivation and Empirical Security Analysis of Chaos-Based Image and Video Encryption," IEEE Trans. Inf. Forensics Security, 2018. [VERIFY volume/pages]
+  - OWASP Password Storage Cheat Sheet (PBKDF2 iteration guidance). [VERIFY URL/version/date; cite only if you state a number from it]
+  - NIST SP 800-132 (Recommendation for Password-Based Key Derivation), 2010. [VERIFY authors]
+
+ DROP: any entry that ends up uncited.
+
+B8. TABLES, FIGURES, LAYOUT
+ - Fix K14: restore the corresponding-author footnote mechanism used in the previous draft (compare both .tex files); make sure the footer area does not overlap on page 1.
+ - No table may overflow the margin (use \small or \footnotesize, table*, or shorter cell text).
+ - Fig. 1: enlarge text; add the session header / key-transport step; make the concealed-block mask visible; caption matches the figure.
+ - Fig. 2: single-trial caption (K4); Fig. 3: mean +/- std bands from Table 3's trials; Fig. 5: error bars/CI.
+ - Check the page limit for the conference; if over, move secondary tables (other images, extra baselines) to a supplementary file in the repo.
+
+=====================================================================
+PART C - FINAL CHECKS (run and report)
+=====================================================================
+ 1. Compile LaTeX: zero overfull-table warnings; scripts/lint_latex.py passes; every table has all rows (Table 6 has 12+ rows; Table 7 has 5 levels x all scheme columns).
+ 2. Every number in the abstract, introduction, results text and conclusion equals the value in a generated table/macro.
+ 3. Table/figure captions match the data (image name, dimensions, blocks, trials).
+ 4. grep the .tex for: "forward secrecy", "impossible", "proves", "reviewer", "In early literature", "preliminary designs", "authentic benchmark datasets", "dB dB" -> none remain (except where deliberately negated, e.g. "we do not claim forward secrecy").
+ 5. All claims about CBC match the A2 results; no sentence says CBC "corrupts every subsequent block" for aligned record loss.
+ 6. Every reference is cited; every [VERIFY] is resolved or removed; Table 1 literature numbers are traceable to the cited papers.
+ 7. A fresh clone plus one command regenerates every table, macro and figure.
+
+=====================================================================
+PART D - RESPONSE-TO-REVIEWERS UPDATE
+=====================================================================
+Update response_to_reviewers.md comment by comment (R1, R2, R3): what changed, where (section/table/page), which experiment backs it. Be explicit about: the abstract rewrite (R3); the single-image concern now resolved by six images plus Submarine-only tables stated as such (R1); key transport, revocation and epoch handling (R3); hardware scope exactly as measured (R3); the CBC comparison reframed and extended with a framed baseline (R2); EPR described as a construction-implied indicator, not a proof (R2); MAC-spoofing limits (R2); the added limitations. Where a result got weaker or a claim was withdrawn (forward secrecy, "CBC cascades"), say so plainly.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-11-02T14:12:56+05:30.
+
+The user's current state is as follows:
+Other open documents:
+- c:\Users\lenovo\Documents\SecureImageTransmission_new\paper_icmlde\sw.tex (LANGUAGE_UNSPECIFIED)
+- c:\Users\lenovo\Documents\SecureImageTransmission_new\app.py (LANGUAGE_UNSPECIFIED)
+- c:\Users\lenovo\Documents\SecureImageTransmission_new\paper_icmlde\sw_humanized.tex (LANGUAGE_UNSPECIFIED)
+- c:\Users\lenovo\Documents\SecureImageTransmission_new\tests\test_rfc5869.py (LANGUAGE_UNSPECIFIED)
+- c:\Users\lenovo\Documents\SecureImageTransmission_new\requirements.txt (LANGUAGE_UNSPECIFIED)
+</ADDITIONAL_METADATA>

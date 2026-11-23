@@ -1,0 +1,11 @@
+mode,corrupted_blocks,failed_blocks,epr,affected_pct,psnr_db
+AES-GCM (block-independent),10,10,1.0,0.46,38.42
+AES-CBC (chained),10,2073,207.3,95.31,15.28
+AES-GCM (block-independent),25,25,1.0,1.15,27.08
+AES-CBC (chained),25,2149,85.96,98.8,14.1
+AES-GCM (block-independent),50,50,1.0,2.3,24.77
+AES-CBC (chained),50,2044,40.88,93.98,13.87
+AES-GCM (block-independent),100,100,1.0,4.6,22.53
+AES-CBC (chained),100,2173,21.73,99.91,13.7
+AES-GCM (block-independent),200,200,1.0,9.2,20.2
+AES-CBC (chained),200,2169,10.845,99.72,12.63

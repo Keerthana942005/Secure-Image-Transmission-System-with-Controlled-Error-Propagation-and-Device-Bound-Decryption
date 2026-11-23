@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software or manuscript artifacts, please cite it as below."
+title: "Secure Image Transmission System with Controlled Error Propagation, Device-Bound Decryption, and Downstream Machine Learning Resilience"
+authors:
+  - family-names: Nellyeri
+    given-names: Keerthana
+    affiliation: "School of Computing, Amrita Vishwa Vidyapeetham, Amritapuri, Kollam, India"
+  - family-names: Rajesh
+    given-names: Swetha
+    affiliation: "School of Computing, Amrita Vishwa Vidyapeetham, Amritapuri, Kollam, India"
+  - family-names: Krishna R.
+    given-names: Radhu
+    email: radhukr@am.amrita.edu
+    affiliation: "School of Computing, Amrita Vishwa Vidyapeetham, Amritapuri, Kollam, India"
+version: 1.0.0
+date-released: "2026-11-04"
+repository-code: "TODO_USER"
+doi: "TODO_USER"
+license: "TODO_USER"
+
