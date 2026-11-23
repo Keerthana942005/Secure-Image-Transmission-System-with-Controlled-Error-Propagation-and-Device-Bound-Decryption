@@ -1,0 +1,27 @@
+{
+  "trials": 1000,
+  "seed": 42,
+  "summary": {
+    "unframed_cbc": {
+      "detection_rate_pct": 0.0,
+      "controlled_bit_flip_success_rate_pct": 100.0,
+      "tampered_block_garbage_rate_pct": 100.0
+    },
+    "framed_cbc": {
+      "detection_rate_pct": 0.0,
+      "controlled_bit_flip_success_rate_pct": 100.0,
+      "tampered_block_garbage_rate_pct": 100.0
+    },
+    "cbc_hmac": {
+      "detection_rate_pct": 100.0,
+      "controlled_bit_flip_success_rate_pct": 0.0,
+      "tampered_block_garbage_rate_pct": 0.0
+    },
+    "proposed_gcm": {
+      "detection_rate_pct": 100.0,
+      "controlled_bit_flip_success_rate_pct": 0.0,
+      "tampered_block_garbage_rate_pct": 0.0
+    }
+  },
+  "description": "Demonstrates CBC bit malleability: chosen bit-flips in ciphertext block j flip exact bits in plaintext block j+1 with 100% success while block j becomes garbage under unauthenticated CBC. Proposed AES-GCM and CBC+HMAC achieve 100% detection and 0% controlled modification."
+}

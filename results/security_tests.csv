@@ -1,0 +1,19 @@
+attack_scenario,description,expected_action,observed_action,detection_mechanism,trials,detected_count,detection_rate_pct
+In-Place Bit-Flip in Ciphertext,Single-byte ciphertext modification in random block,detected_and_quarantined,detected_and_quarantined,GHASH Tag Verification Failure,100,100,100.0
+Block Swap / Index Splicing,Pairwise swapping of distinct block records,detected_and_quarantined,detected_and_quarantined,AAD Block Index Mismatch,100,100,100.0
+Header Index Tampering,Adversary alters transmitted record index field,detected_and_quarantined,detected_and_quarantined,AAD Block Index Mismatch,100,100,100.0
+Cross-Session Splice,Injection of block from prior session into current stream,detected_and_quarantined,detected_and_quarantined,AAD Session Salt / Epoch Mismatch,100,100,100.0
+Cross-Epoch Replay in Stream,Replaying stale block packet from earlier session epoch,detected_and_quarantined,detected_and_quarantined,AAD Epoch Field Mismatch,100,100,100.0
+Dropped Record (Packet Loss),Silent drop of 1 block (below tau threshold),concealed,concealed,Index Gap Detection & Boundary Concealment,100,100,100.0
+Duplicated Record Injection,Adversary injects duplicated valid block record,duplicate_ignored,duplicate_ignored,Monotonic Index Deduplication Filter,100,100,100.0
+Stream Truncation Attack,Truncation of trailing 50% of stream (exceeding tau=0.25),rejected_over_threshold,rejected_over_threshold,Corruption Threshold Exceeded Gate (tau=0.25),100,100,100.0
+Dimension Tampering in AAD (H/W/N),Adversary alters claimed image dimensions in AAD binding,detected_and_quarantined,detected_and_quarantined,Global AAD Dimensions Verification Failure,100,100,100.0
+Unauthorized Device ID,Receiver using unauthorized device identifier,detected_and_quarantined,detected_and_quarantined,2FA Key Derivation Divergence / GHASH Failure,100,100,100.0
+Incorrect Passphrase,Receiver using incorrect passphrase in 2FA key derivation,detected_and_quarantined,detected_and_quarantined,2FA Key Derivation Divergence / GHASH Failure,100,100,100.0
+Revoked Device Access,Decryption attempt by revoked device on DRL,session_rejected,session_rejected,Device Revocation List (DRL) Authorization Check,100,100,100.0
+Session Header Bit-Flip,Single-bit corruption in 134-byte session header,session_rejected,session_rejected,Constant-Time Header HMAC-SHA256 Failure,100,100,100.0
+Ephemeral Public Key Substitution,Adversary substitutes sender ephemeral X25519 key,session_rejected,session_rejected,Constant-Time Header HMAC-SHA256 Failure,100,100,100.0
+Wrong Receiver Static Key,"Encrypted for Receiver A, attempted decryption by Receiver B",session_rejected,session_rejected,Fingerprint Mismatch / Header HMAC Verification Failure,100,100,100.0
+DRL Rollback Attack,Adversary attempts to install stale DRL with lower version,session_rejected,session_rejected,Monotonic Version Rollback Protection,100,100,100.0
+Forged DRL Signature,Adversary modifies DRL content or tampers with Ed25519 signature,session_rejected,session_rejected,Ed25519 Digital Signature Verification Failure,100,100,100.0
+Forged Epoch Header Lockout,Forged header with huge epoch and bad HMAC fails without advancing stored epoch,session_rejected,session_rejected,Pre-HMAC Read-Only Monotonicity Guard & State Isolation,100,100,100.0

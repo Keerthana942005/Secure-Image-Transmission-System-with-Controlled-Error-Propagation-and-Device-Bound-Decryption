@@ -1,0 +1,91 @@
+{
+  "hostname": "LAPTOP-95MMSK7G",
+  "cpu_name": "13th Gen Intel(R) Core(TM) i5-13420H",
+  "cpu_model": "13th Gen Intel(R) Core(TM) i5-13420H",
+  "cores": 12,
+  "cpu_logical_threads": 12,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python_version": "3.13.15",
+  "cryptography_version": "50.0.2",
+  "power_profile": {
+    "active_scheme": "Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced)",
+    "ac_status": "Battery",
+    "battery_pct": 73
+  },
+  "power_plan_name": "Balanced",
+  "num_runs": 15,
+  "pbkdf2_mean_ms": 106.03,
+  "session_setup_mean_ms": 105.6,
+  "pure_crypto": {
+    "throughput_decimal_mbps": 569.2,
+    "min_mbps": 482.9,
+    "max_mbps": 660.7,
+    "iqr_mbps": 50.6,
+    "spread_mbps": 177.8
+  },
+  "end_to_end": {
+    "throughput_decimal_mbps": 191.9,
+    "min_mbps": 178.1,
+    "max_mbps": 214.0,
+    "iqr_mbps": 21.4,
+    "spread_mbps": 35.9
+  },
+  "video_streaming_load": [
+    {
+      "profile": "720p 60fps",
+      "resolution": "1280x720",
+      "fps": 60,
+      "data_rate_decimal_mbps": 165.9,
+      "load_crypto_median_pct": 29.1,
+      "load_crypto_min_pct": 25.1,
+      "load_crypto_max_pct": 34.4,
+      "status_crypto": "supported on this host",
+      "load_e2e_median_pct": 86.5,
+      "load_e2e_min_pct": 77.5,
+      "load_e2e_max_pct": 93.1,
+      "status_e2e": "supported on this host"
+    },
+    {
+      "profile": "1080p 30fps",
+      "resolution": "1920x1080",
+      "fps": 30,
+      "data_rate_decimal_mbps": 186.6,
+      "load_crypto_median_pct": 32.8,
+      "load_crypto_min_pct": 28.2,
+      "load_crypto_max_pct": 38.6,
+      "status_crypto": "supported on this host",
+      "load_e2e_median_pct": 97.2,
+      "load_e2e_min_pct": 87.2,
+      "load_e2e_max_pct": 104.8,
+      "status_e2e": "at the limit of this host"
+    },
+    {
+      "profile": "1080p 60fps",
+      "resolution": "1920x1080",
+      "fps": 60,
+      "data_rate_decimal_mbps": 373.2,
+      "load_crypto_median_pct": 65.6,
+      "load_crypto_min_pct": 56.5,
+      "load_crypto_max_pct": 77.3,
+      "status_crypto": "supported on this host",
+      "load_e2e_median_pct": 194.5,
+      "load_e2e_min_pct": 174.4,
+      "load_e2e_max_pct": 209.5,
+      "status_e2e": "not supported"
+    },
+    {
+      "profile": "4K 60fps",
+      "resolution": "3840x2160",
+      "fps": 60,
+      "data_rate_decimal_mbps": 1493.0,
+      "load_crypto_median_pct": 262.3,
+      "load_crypto_min_pct": 226.0,
+      "load_crypto_max_pct": 309.2,
+      "status_crypto": "not supported",
+      "load_e2e_median_pct": 778.0,
+      "load_e2e_min_pct": 697.7,
+      "load_e2e_max_pct": 838.3,
+      "status_e2e": "not supported"
+    }
+  ]
+}

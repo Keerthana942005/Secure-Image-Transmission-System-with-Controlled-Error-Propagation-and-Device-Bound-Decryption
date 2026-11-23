@@ -1,0 +1,6 @@
+configuration,block_size,num_blocks,enc_time_mean_ms,enc_time_std_ms,enc_time_median_ms,dec_time_mean_ms,dec_time_std_ms,dec_time_median_ms,e2e_enc_time_mean_ms,e2e_enc_time_std_ms,e2e_dec_time_mean_ms,e2e_dec_time_std_ms,payload_bytes,tag_iv_header_bytes,padding_bytes,total_overhead_bytes,total_overhead_pct,analytical_tag_overhead_pct,throughput_mbps,e2e_throughput_mbps,error_resilience
+Monolithic (Whole Image),N/A,1,0.59,0.04,0.58,0.66,0.04,0.65,0.59,0.04,0.66,0.04,1654648,28,0,28,0.0017,0.0017,2783.0,2783.0,Catastrophic Abort (0% Availability)
+Block-Level 8x8,8x8,8700,11.46,0.35,11.52,10.12,0.55,9.98,17.72,0.44,20.72,0.62,1948800,278400,15780,294180,17.78,16.67,144.4,93.4,Strictly Bounded (EPR = 1.0)
+Block-Level 16x16 (Proposed),16x16,2175,3.68,0.21,3.6,3.23,0.24,3.14,6.18,0.37,6.82,0.85,1740000,69600,15780,85380,5.16,4.17,450.0,267.9,Strictly Bounded (EPR = 1.0)
+Block-Level 32x32,32x32,570,1.47,0.13,1.4,1.23,0.09,1.21,2.78,0.26,2.59,0.29,1769280,18240,96420,114660,6.93,1.04,1128.0,596.2,Strictly Bounded (EPR = 1.0)
+Block-Level 64x64,64x64,152,0.84,0.07,0.83,0.69,0.04,0.68,1.87,0.25,1.48,0.16,1872640,4864,213156,218020,13.18,0.26,1964.9,884.8,Strictly Bounded (EPR = 1.0)

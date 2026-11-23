@@ -1,0 +1,7 @@
+corrupted_blocks,corrupted_pct,gcm_failed_mean,gcm_wrong_mean,gcm_precision_mean,gcm_recall_mean,gcm_epr_mean,gcm_psnr_raw_mean,gcm_psnr_raw_std,gcm_ssim_raw_mean,gcm_psnr_conc_mean,gcm_psnr_conc_std,gcm_ssim_conc_mean,gcm_psnr_gain_mean,cbc_loss_wrong_mean,cbc_loss_epr_mean,cbc_loss_psnr_mean,cbc_loss_psnr_std,cbc_framed_wrong_mean,cbc_framed_epr_mean,cbc_framed_psnr_mean,cbc_framed_psnr_std,cbc_bit_wrong_img_mean,cbc_bit_wrong_aes_mean,cbc_hmac_recall,mono_gcm_avail_pct,mono_gcm_psnr
+0,0.0,0.0,0.0,1.0,1.0,,inf,0.0,1.0,inf,0.0,1.0,,0.0,,inf,0.0,0.0,,inf,0.0,0.0,0.0,1.0,100.0,inf
+10,0.98,10.0,10.0,1.0,1.0,1.0,26.98,0.73,0.9823,48.04,4.33,0.9997,21.07,939.13,93.91,9.42,0.7,10.0,1.0,26.98,0.73,12.97,20.0,1.0,0.0,0.0
+25,2.44,25.0,25.0,1.0,1.0,1.0,22.85,0.54,0.9556,44.65,2.47,0.9995,21.8,993.9,39.76,8.76,0.41,25.0,1.0,22.85,0.54,33.2,50.0,1.0,0.0,0.0
+50,4.88,50.0,50.0,1.0,1.0,1.0,19.89,0.33,0.9149,40.8,1.58,0.9988,20.9,1015.7,20.31,8.27,0.25,50.0,1.0,19.89,0.33,65.27,100.0,1.0,0.0,0.0
+100,9.77,100.0,100.0,1.0,1.0,1.0,16.83,0.27,0.8354,36.98,1.23,0.9973,20.15,1021.87,10.22,8.59,0.23,100.0,1.0,16.83,0.27,125.33,199.97,1.0,0.0,0.0
+200,19.53,200.0,200.0,1.0,1.0,1.0,13.75,0.17,0.6991,33.42,1.17,0.9941,19.67,1024.0,5.12,8.38,0.14,200.0,1.0,13.75,0.17,237.07,400.0,1.0,0.0,0.0

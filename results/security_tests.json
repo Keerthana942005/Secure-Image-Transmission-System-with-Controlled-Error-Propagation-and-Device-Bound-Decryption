@@ -1,0 +1,182 @@
+[
+  {
+    "attack_scenario": "In-Place Bit-Flip in Ciphertext",
+    "description": "Single-byte ciphertext modification in random block",
+    "expected_action": "detected_and_quarantined",
+    "observed_action": "detected_and_quarantined",
+    "detection_mechanism": "GHASH Tag Verification Failure",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  },
+  {
+    "attack_scenario": "Block Swap / Index Splicing",
+    "description": "Pairwise swapping of distinct block records",
+    "expected_action": "detected_and_quarantined",
+    "observed_action": "detected_and_quarantined",
+    "detection_mechanism": "AAD Block Index Mismatch",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  },
+  {
+    "attack_scenario": "Header Index Tampering",
+    "description": "Adversary alters transmitted record index field",
+    "expected_action": "detected_and_quarantined",
+    "observed_action": "detected_and_quarantined",
+    "detection_mechanism": "AAD Block Index Mismatch",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  },
+  {
+    "attack_scenario": "Cross-Session Splice",
+    "description": "Injection of block from prior session into current stream",
+    "expected_action": "detected_and_quarantined",
+    "observed_action": "detected_and_quarantined",
+    "detection_mechanism": "AAD Session Salt / Epoch Mismatch",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  },
+  {
+    "attack_scenario": "Cross-Epoch Replay in Stream",
+    "description": "Replaying stale block packet from earlier session epoch",
+    "expected_action": "detected_and_quarantined",
+    "observed_action": "detected_and_quarantined",
+    "detection_mechanism": "AAD Epoch Field Mismatch",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  },
+  {
+    "attack_scenario": "Dropped Record (Packet Loss)",
+    "description": "Silent drop of 1 block (below tau threshold)",
+    "expected_action": "concealed",
+    "observed_action": "concealed",
+    "detection_mechanism": "Index Gap Detection & Boundary Concealment",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  },
+  {
+    "attack_scenario": "Duplicated Record Injection",
+    "description": "Adversary injects duplicated valid block record",
+    "expected_action": "duplicate_ignored",
+    "observed_action": "duplicate_ignored",
+    "detection_mechanism": "Monotonic Index Deduplication Filter",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  },
+  {
+    "attack_scenario": "Stream Truncation Attack",
+    "description": "Truncation of trailing 50% of stream (exceeding tau=0.25)",
+    "expected_action": "rejected_over_threshold",
+    "observed_action": "rejected_over_threshold",
+    "detection_mechanism": "Corruption Threshold Exceeded Gate (tau=0.25)",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  },
+  {
+    "attack_scenario": "Dimension Tampering in AAD (H/W/N)",
+    "description": "Adversary alters claimed image dimensions in AAD binding",
+    "expected_action": "detected_and_quarantined",
+    "observed_action": "detected_and_quarantined",
+    "detection_mechanism": "Global AAD Dimensions Verification Failure",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  },
+  {
+    "attack_scenario": "Unauthorized Device ID",
+    "description": "Receiver using unauthorized device identifier",
+    "expected_action": "detected_and_quarantined",
+    "observed_action": "detected_and_quarantined",
+    "detection_mechanism": "2FA Key Derivation Divergence / GHASH Failure",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  },
+  {
+    "attack_scenario": "Incorrect Passphrase",
+    "description": "Receiver using incorrect passphrase in 2FA key derivation",
+    "expected_action": "detected_and_quarantined",
+    "observed_action": "detected_and_quarantined",
+    "detection_mechanism": "2FA Key Derivation Divergence / GHASH Failure",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  },
+  {
+    "attack_scenario": "Revoked Device Access",
+    "description": "Decryption attempt by revoked device on DRL",
+    "expected_action": "session_rejected",
+    "observed_action": "session_rejected",
+    "detection_mechanism": "Device Revocation List (DRL) Authorization Check",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  },
+  {
+    "attack_scenario": "Session Header Bit-Flip",
+    "description": "Single-bit corruption in 134-byte session header",
+    "expected_action": "session_rejected",
+    "observed_action": "session_rejected",
+    "detection_mechanism": "Constant-Time Header HMAC-SHA256 Failure",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  },
+  {
+    "attack_scenario": "Ephemeral Public Key Substitution",
+    "description": "Adversary substitutes sender ephemeral X25519 key",
+    "expected_action": "session_rejected",
+    "observed_action": "session_rejected",
+    "detection_mechanism": "Constant-Time Header HMAC-SHA256 Failure",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  },
+  {
+    "attack_scenario": "Wrong Receiver Static Key",
+    "description": "Encrypted for Receiver A, attempted decryption by Receiver B",
+    "expected_action": "session_rejected",
+    "observed_action": "session_rejected",
+    "detection_mechanism": "Fingerprint Mismatch / Header HMAC Verification Failure",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  },
+  {
+    "attack_scenario": "DRL Rollback Attack",
+    "description": "Adversary attempts to install stale DRL with lower version",
+    "expected_action": "session_rejected",
+    "observed_action": "session_rejected",
+    "detection_mechanism": "Monotonic Version Rollback Protection",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  },
+  {
+    "attack_scenario": "Forged DRL Signature",
+    "description": "Adversary modifies DRL content or tampers with Ed25519 signature",
+    "expected_action": "session_rejected",
+    "observed_action": "session_rejected",
+    "detection_mechanism": "Ed25519 Digital Signature Verification Failure",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  },
+  {
+    "attack_scenario": "Forged Epoch Header Lockout",
+    "description": "Forged header with huge epoch and bad HMAC fails without advancing stored epoch",
+    "expected_action": "session_rejected",
+    "observed_action": "session_rejected",
+    "detection_mechanism": "Pre-HMAC Read-Only Monotonicity Guard & State Isolation",
+    "trials": 100,
+    "detected_count": 100,
+    "detection_rate_pct": 100.0
+  }
+]

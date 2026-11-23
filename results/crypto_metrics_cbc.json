@@ -1,0 +1,122 @@
+[
+  {
+    "image": "submarine.jpg",
+    "dimensions": "1199x460",
+    "plain_entropy_overall": 6.9553,
+    "cipher_entropy_overall": 7.9999,
+    "cipher_entropy_channels": [
+      7.9997,
+      7.9996,
+      7.9997
+    ],
+    "chi_square_stat": 268.49,
+    "cipher_corr_h": -0.0046,
+    "cipher_corr_v": -0.0055,
+    "cipher_corr_d": -0.0073,
+    "cipher_corr_max": 0.0073,
+    "npcr_mean": 99.61,
+    "uaci_mean": 33.46,
+    "key_sensitivity_npcr": 99.61,
+    "key_sensitivity_uaci": 33.5
+  },
+  {
+    "image": "cameraman_256.png",
+    "dimensions": "256x256",
+    "plain_entropy_overall": 7.1507,
+    "cipher_entropy_overall": 7.9991,
+    "cipher_entropy_channels": [
+      7.9973,
+      7.9971,
+      7.9974
+    ],
+    "chi_square_stat": 253.85,
+    "cipher_corr_h": -0.0081,
+    "cipher_corr_v": -0.0114,
+    "cipher_corr_d": -0.0126,
+    "cipher_corr_max": 0.0126,
+    "npcr_mean": 99.61,
+    "uaci_mean": 33.47,
+    "key_sensitivity_npcr": 99.6,
+    "key_sensitivity_uaci": 33.45
+  },
+  {
+    "image": "baboon_texture_512.png",
+    "dimensions": "512x512",
+    "plain_entropy_overall": 7.766,
+    "cipher_entropy_overall": 7.9997,
+    "cipher_entropy_channels": [
+      7.9995,
+      7.9993,
+      7.9992
+    ],
+    "chi_square_stat": 272.88,
+    "cipher_corr_h": 0.0005,
+    "cipher_corr_v": 0.0026,
+    "cipher_corr_d": -0.0053,
+    "cipher_corr_max": 0.0053,
+    "npcr_mean": 99.61,
+    "uaci_mean": 33.47,
+    "key_sensitivity_npcr": 99.61,
+    "key_sensitivity_uaci": 33.49
+  },
+  {
+    "image": "peppers_color_512.png",
+    "dimensions": "512x512",
+    "plain_entropy_overall": 7.5333,
+    "cipher_entropy_overall": 7.9998,
+    "cipher_entropy_channels": [
+      7.9994,
+      7.9993,
+      7.9993
+    ],
+    "chi_square_stat": 258.4,
+    "cipher_corr_h": -0.0134,
+    "cipher_corr_v": 0.0056,
+    "cipher_corr_d": 0.0071,
+    "cipher_corr_max": 0.0134,
+    "npcr_mean": 99.61,
+    "uaci_mean": 33.45,
+    "key_sensitivity_npcr": 99.62,
+    "key_sensitivity_uaci": 33.43
+  },
+  {
+    "image": "medical_mri_512.png",
+    "dimensions": "512x512",
+    "plain_entropy_overall": 6.7098,
+    "cipher_entropy_overall": 7.9998,
+    "cipher_entropy_channels": [
+      7.9993,
+      7.9992,
+      7.9993
+    ],
+    "chi_square_stat": 271.51,
+    "cipher_corr_h": -0.0089,
+    "cipher_corr_v": -0.0094,
+    "cipher_corr_d": -0.0171,
+    "cipher_corr_max": 0.0171,
+    "npcr_mean": 99.61,
+    "uaci_mean": 33.45,
+    "key_sensitivity_npcr": 99.61,
+    "key_sensitivity_uaci": 33.43
+  },
+  {
+    "image": "satellite_aerial_1024.png",
+    "dimensions": "1024x1024",
+    "plain_entropy_overall": 7.3105,
+    "cipher_entropy_overall": 7.9999,
+    "cipher_entropy_channels": [
+      7.9998,
+      7.9998,
+      7.9998
+    ],
+    "chi_square_stat": 277.99,
+    "cipher_corr_h": 0.0067,
+    "cipher_corr_v": -0.0089,
+    "cipher_corr_d": -0.016,
+    "cipher_corr_max": 0.016,
+    "npcr_mean": 99.61,
+    "uaci_mean": 33.46,
+    "key_sensitivity_npcr": 99.6,
+    "key_sensitivity_uaci": 33.47
+  }
+]
