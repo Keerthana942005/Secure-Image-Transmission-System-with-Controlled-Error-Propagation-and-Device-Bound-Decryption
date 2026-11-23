@@ -1,0 +1,6 @@
+scheme,test_image,cipher_entropy,npcr_pct,uaci_pct,cryptographic_primitive,integrity_tag,containment_epr,citation_key,verification_status
+Proposed Scheme (Mean of 6 Images),6 Benchmark Images,7.9997,99.61,33.45,AES-256-GCM (Block-wise),128-bit GHASH per block,1.00 (Isolated),proposed,empirically_measured
+Standard AES-CBC (Monolithic),6 Benchmark Images,7.9998,99.61,33.46,AES-256-CBC (Monolithic),None,No integrity; misaligned under unframed loss,aes_cbc,empirically_measured
+Hua et al. (2015) (our re-implementation),6 Benchmark Images,7.9997,48.80,6.37,2D Sine Logistic Modulation,None,No integrity; misaligned under unframed loss,hua2015,empirically_measured
+Zhou et al. (2014) (our re-implementation),6 Benchmark Images,7.9997,55.21,6.56,1D Chaotic Map (Logistic-Tent),None,No integrity; misaligned under unframed loss,zhou2014,empirically_measured
+MSB Selective AES-CTR (our implementation),6 Benchmark Images,7.9755,0.00,0.00,AES-256-CTR on 4 MSBs (4 LSBs plaintext),None,1.00 (Isolated; 4 LSBs plaintext exposed),selective_msb,empirically_measured
